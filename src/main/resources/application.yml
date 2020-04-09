@@ -1,0 +1,13 @@
+server:
+  port: 8899
+spring:
+  application:
+    name: deploysys-service
+  profiles:
+    active: dev
+eureka:
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}
+    lease-renewal-interval-in-seconds: 5
+

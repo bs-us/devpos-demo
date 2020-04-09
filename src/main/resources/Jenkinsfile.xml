@@ -1,0 +1,42 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.36">
+    <actions/>
+    <description>${description}</description>
+    <keepDependencies>false</keepDependencies>
+    <properties/>
+    <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.80">
+        <script>node{
+            stage(&apos;git clone&apos;){
+            checkout([$class: &apos;GitSCM&apos;, branches: [[name: &apos;*/master&apos;]], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: &apos;MyGitlabAPI&apos;, url: &apos;${projectCloneUrl}>&apos;]]])
+            def pom = readMavenPom file: &apos;pom.xml&apos;
+            harbor_host = &quot;192.30.103.122:8084&quot;
+            img_name = &quot;${pom.artifactId}&quot;
+            file_name = &quot;${pom.artifactId}&quot;
+            jar_name = &quot;${pom.artifactId}&quot;
+            version = &quot;${pom.version}&quot;
+            echo &quot;group: ${pom.groupId}, artifactId: ${pom.artifactId}, version: ${pom.version}&quot;
+            }
+            stage(&apos;mvn test&apos;){
+            withMaven(maven: &apos;maven&apos;) {
+            sh &quot;mvn test&quot;
+            }
+            }
+            stage(&apos;mvn build&apos;){
+            withMaven(maven: &apos;maven&apos;) {
+            sh &quot;mvn clean install -Dmaven.test.skip=true&quot;
+            sh &quot;docker --version&quot;
+            sh &quot;echo -e &apos;FROM openjdk:8-jre-slim \nADD target/${jar_name}-${version}.jar /${jar_name}.jar \nRUN  java -jar /${jar_name}.jar 2&gt;&amp;1&amp;&apos;&gt;Dockerfile&quot;
+            sh &quot;docker build -t ${img_name}:${build_tag}-${version} .&quot;
+            }
+            }
+            stage(&apos;push harbor&apos;){
+            sh &quot;docker login ${harbor_host} -u admin -p Harbor12345&quot;
+            sh &quot;docker tag ${img_name}:${build_tag}-${version} ${harbor_host}/${file_name}/${img_name}:${build_tag}-${version}&quot;
+            sh &quot;docker push  ${harbor_host}/${file_name}/${img_name}:${build_tag}-${version}&quot;
+            }
+            }
+        </script>
+        <sandbox>true</sandbox>
+    </definition>
+    <disabled>false</disabled>
+</flow-definition>

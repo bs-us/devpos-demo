@@ -1,0 +1,13 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: http://121.26.221.246:23083/eureka/
+#jenkins连接
+jenkins:
+  url: http://121.26.221.246:23085/
+  username: root
+  password: dashuju2020#$#
+#gitlab连接
+gitlab:
+  url: http://121.26.221.246:23090/
+  privateToken: pQ8aBygwJVV7xJcbAo6Y
